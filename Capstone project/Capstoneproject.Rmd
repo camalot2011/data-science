@@ -1,0 +1,196 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+Capstone project for Data Science specialization on Coursera
+================================================================
+
+##1. Requirement
+  
+The goal of this project is to take a dataset provided and create an NLP (natural language processing) model that is able to predict subsequent words. Blogs, Twitter and News were datasets used to train the model.
+
+SwiftKey is the company that works in cooperation with Professors of the Johns Hopkins University to prepare this Project, with objective to construct a predictive model that makes easier for people to type on their mobile devices.
+
+Besides cleaning and sub-setting the data, the tokenization technique of N-Grams were used to combinations the words to be used at the predictive algotithm.
+
+##2. Loading dependencies
+
+```{r loading libraries,eval=TRUE,echo=TRUE}
+library(NLP);library(openNLP)                            # Natural language processing
+library(stringi)                                         # string tools
+library(tm)                                              # test mining
+library(RWeka);library(RWekajars)
+library(ggplot2);library(dplyr);library(plyr)
+library(slam)
+```
+
+##3. Getting the data
+
+```{r downloading, comment="",cache=TRUE}
+if(!file.exists("~/Capstone_data")){                     # checking data directory
+  dir.create("~/Capstone_data")
+}
+#download the file if it doesn't exist
+url <- "https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip"
+if(!file.exists("~/Capstone_data/Coursera-Swiftkey.zip")){
+  download.file(url,destfile = "~/Capstone_data/Coursera-Swiftkey.zip",mode = "wb")
+}
+#unzip the file if it hasn't been done
+if(!file.exists(("~/Capstone_data/final"))){
+  unzip(zipfile = "~/Capstone_data/Coursera-Swiftkey.zip",exdir = "~/Capstone_data")
+}
+#read lines for each file
+blogsURL <- file("~/Capstone_data/final/en_US/en_US.blogs.txt", open="rb")
+blogs <- readLines(blogsURL, encoding = "UTF-8", skipNul=TRUE)
+close(blogsURL)
+
+newsURL <- file("~/Capstone_data/final/en_US/en_US.news.txt", open = "rb")
+news <- readLines(newsURL, encoding = "UTF-8", skipNul=TRUE)
+close(newsURL)
+
+twitterURL <- file("~/Capstone_data/final/en_US/en_US.twitter.txt", open = "rb")
+twitter <- readLines(twitterURL, encoding = "UTF-8", skipNul=TRUE)
+close(twitterURL)
+```
+
+##4. Exploratory data analysis
+
+```{r basics, comment=""}
+# Size of Files
+x1 <- file.info("~/Capstone_data/final/en_US/en_US.blogs.txt")$size / 1024^2 
+x2 <- file.info("~/Capstone_data/final/en_US/en_US.news.txt")$size  / 1024^2 
+x3 <- file.info("~/Capstone_data/final/en_US/en_US.twitter.txt")$size / 1024^2
+
+# Number of lines
+y1 <- length(blogs)
+y2 <- length(news)
+y3 <- length(twitter)
+
+# Counting the Words
+z1 <- sum(stri_count_words(blogs))
+z2 <- sum(stri_count_words(news))
+z3 <- sum(stri_count_words(twitter))
+
+# The length of the longest line
+t1 <- max(nchar(blogs)) # [1] 40,833
+t2 <- max(nchar(news))  # [1] 11,384 
+t3 <- max(nchar(twitter)) # [1] 140
+
+#Summary
+data.frame(
+        files_Name = c("Blogs","News","Twitter"),
+        files_Size = c(x1, x2, x3),
+        lines_Count = c(y1, y2, y3),
+        words_Count = c(z1, z2, z3),
+        max_size_Line = c(t1, t2, t3)
+)
+```
+
+##5. Cleaning data
+
+```{r cleaning, comment="",cache=TRUE}
+# Sample the data
+set.seed(133456)
+data.sample <- c(sample(blogs, size = 5000),
+                 sample(news, size = 5000),
+                 sample(twitter, size = 5000))
+
+# Create corpus and clean the data
+corpus <- VCorpus(VectorSource(data.sample))
+corpus <- tm_map(corpus,content_transformer(function(x) iconv(enc2utf8(x),to = "UTF-8", sub="byte")))
+toSpace <- content_transformer(function(x, pattern) gsub(pattern, "", x))
+corpus <- tm_map(corpus, toSpace, "http[[:alnum:]]*")
+corpus <- tm_map(corpus, toSpace, "@[^\\s]+")
+corpus <- tm_map(corpus, tolower)
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, PlainTextDocument)
+```
+
+##6. Tokenize to get the N-Gram
+
+```{r Ngram}
+#Define the funtions to get N-Gram, frequency, and making plots
+unigram <- function(x) NGramTokenizer(x, Weka_control(min = 1, max = 1))
+bigram <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+trigram <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+quadgram <- function(x) NGramTokenizer(x,Weka_control(min = 4, max= 4))
+getFreq <- function(tdm) {
+  freq <- sort(rowSums(as.matrix(tdm)), decreasing = TRUE)
+  return(data.frame(word = names(freq), freq = freq))
+}
+makePlot <- function(data, label) {
+  ggplot(data[1:30,], aes(reorder(word, -freq), freq)) +
+         labs(x = label, y = "Frequency") +
+         theme(axis.text.x = element_text(angle = 60, size = 12, hjust = 1)) +
+         geom_bar(stat = "identity", fill = I("blue"))
+}
+#Get frequencies
+##unigram
+options(mc.cores = 1)
+unicorpus <- DocumentTermMatrix(corpus, control=list(tokenize=unigram))
+freq1 <- sort(colapply_simple_triplet_matrix(unicorpus,FUN = sum),decreasing = T)
+
+##bigrams
+options(mc.cores=1)
+bicorpus <- DocumentTermMatrix(corpus, control=list(tokenize=bigram))
+freq2 <- sort(colapply_simple_triplet_matrix(bicorpus,FUN = sum),decreasing = T)
+
+##trigrams
+options(mc.cores=1)
+tricorpus <- DocumentTermMatrix(corpus, control=list(tokenize=trigram))
+freq3 <- sort(colapply_simple_triplet_matrix(tricorpus,FUN = sum), decreasing = T)
+
+##quadgrams
+options(mc.cores=1)
+quadcorpus <- DocumentTermMatrix(corpus, control=list(tokenize=quadgram))
+freq4 <- sort(colapply_simple_triplet_matrix(quadcorpus,FUN = sum),decreasing = T)
+
+freq1<-data.frame(word = attr(freq1,"names"), freq = freq1)
+freq2<-data.frame(word = attr(freq2,"names"), freq = freq2)
+freq3<-data.frame(word = attr(freq3,"names"), freq = freq3)
+freq4<-data.frame(word = attr(freq4,"names"), freq = freq4)
+
+#Save the data frame to RData file
+saveRDS(freq1,"~/Gitbash_repo/data-science/Capstone project/Unigram.RData")
+saveRDS(freq2,"~/Gitbash_repo/data-science/Capstone project/Bigram.RData")
+saveRDS(freq3,"~/Gitbash_repo/data-science/Capstone project/Trigram.RData")
+saveRDS(freq4,"~/Gitbash_repo/data-science/Capstone project/Quadgram.RData")
+```
+
+
+
+Here is the histogram for the 30 most common Uni-grams
+```{r, echo = FALSE}
+makePlot(freq1,"30 Most Common Uni-gram")
+```
+
+
+
+
+
+
+Here is the histogram for the 30 most common Bi-grams
+```{r, echo = FALSE}
+makePlot(freq2,"30 Most Common Bi-gram")
+```
+
+
+
+
+
+Here is the histogram for the 30 most common Tri-grams
+```{r, echo = FALSE}
+makePlot(freq3,"30 Most Common Tri-gram")
+```
+
+
+
+
+Here is the histogram for the 30 most common Quad-grams
+```{r, echo = FALSE}
+makePlot(freq4,"30 Most Common Quad-gram")
+```
