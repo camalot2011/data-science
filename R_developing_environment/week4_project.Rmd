@@ -1,0 +1,55 @@
+---
+title: "R_prog_envir_week_4"
+author: "Zhandi Liao"
+date: "March 27, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+daily_SPEC_2014.csv.bz2: a compressed CSV file containing daily measurements of particulate matter chemical constituents in the United States for the year 2014. Note that you should NOT have to decompress this file. The data are measured at a network of federal, state, and local monitors and assembled by the EPA. In this dataset, the "Arithmetic Mean" column provides the level of the indicated chemical constituent and the "Parameter.Name" column provides the name of the chemical constituent. The combination of a "State Code", a "County Code", and a "Site Num", uniquely identifies a monitoring site (the location of which is provided by the "Latitude" and "Longitude" columns).
+
+aqs_sites.xlsx: An excel spreadsheet containing metadata about each of the monitoring sites in the United States where pollution measurements are made. In particular, the "Land Use" and "Location Setting" variables contain information about what kinds of areas the monitors are located in (i.e. "residential" vs. "forest").
+
+For this project, the following packages are required: "dplyr","tidyr","readr","readxl"
+
+```{r loading}
+library(tidyverse)
+library(readxl)
+
+file_url <- "https://d18ky98rnyall9.cloudfront.net/_f018d9fe5547b1a722ce260af0fa71af_quiz_data.zip?Expires=1522281600&Signature=c5VtzeNXD~Jnr8hzLlXGu8OglCnBUln7fUeWoUJFr~A0HnDgRCTKuETaqQ38Rwt8FH0q31KZ0jcNIf2JZj1Sldddh0QswQz35tsAMDrLABb8WAxwAmvgvCRd~znyEUMcAm51PPnoNHySEQLB6MO7mzgHvCTqtihbs5rB669iy~g_&Key-Pair-Id=APKAJLTNE6QMUY6HBC5A"
+```
+
+## Getting the files
+
+Files are fetched from the online link
+
+```{r getting file,cache=TRUE}
+if(!file.exists("~/R_envir_week4")) {
+  dir.create("~/R_envir_week4")
+}
+# check if file has been downloaded then download the file
+if(!file.exists("~/R_envir_week4/quizdata.zip")) {
+datafile <- download.file(file_url,destfile = "~/R_envir_week4/quizdata.zip", mode = "wb")}
+unzip("~/R_envir_week4/quizdata.zip",exdir = "~/R_envir_week4")
+filepath<-"~/R_envir_week4/data"
+sites <- read_xlsx(paste0(filepath,"/aqs_sites.xlsx"))
+daily_spec <- read_csv(paste0(filepath,"/daily_SPEC_2014.csv.bz2"))
+names(daily_spec)<-gsub(" ",".",names(daily_spec))
+names(sites)<-gsub(" ",".",names(sites))
+```
+
+## Question 1.
+What is the average Arithmetic.Mean for "Bromine PM2.5 LC" in the state of Wisconsin in the dataset?
+
+```{r Q1}
+a1<- daily_spec %>%
+    filter(Parameter.Name == "Bromine PM2.5 LC" & 
+             State.Name == "Wisconsin") %>%
+    select(Arithmetic.Mean)
+mean(a1$Arithmetic.Mean,na.rm = TRUE)
+```
