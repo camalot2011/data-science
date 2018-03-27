@@ -53,3 +53,18 @@ a1<- daily_spec %>%
     select(Arithmetic.Mean)
 mean(a1$Arithmetic.Mean,na.rm = TRUE)
 ```
+
+## Question 2.
+Calculate the average of each chemical constituent across all states, monitoring sites and all time points.
+
+Which constituent Parameter.Name has the highest average level?
+```{r Q2}
+a2<-daily_spec %>%
+    group_by(factor(Parameter.Name)) %>%
+    summarize(mean = mean(Arithmetic.Mean,na.rm = TRUE)) %>%
+    arrange(desc(mean))
+a2[a2[,1] == "Sulfur PM2.5 LC"|
+   a2[,1] == "Sodium PM2.5 LC"|
+   a2[,1] == "OC CSN Unadjusted PM2.5 LC TOT"|
+   a2[,1] == "EC2 PM2.5 LC",]
+```
