@@ -68,3 +68,37 @@ a2[a2[,1] == "Sulfur PM2.5 LC"|
    a2[,1] == "OC CSN Unadjusted PM2.5 LC TOT"|
    a2[,1] == "EC2 PM2.5 LC",]
 ```
+
+## Question 3.
+Which monitoring site has the highest average level of "Sulfate PM2.5 LC" across all time?
+
+Indicate the state code, county code, and site number.
+```{r Q3}
+a3<-daily_spec %>%
+    filter(Parameter.Name == "Sulfate PM2.5 LC" & !is.na(Arithmetic.Mean)) %>%
+    arrange(desc(Arithmetic.Mean)) %>%
+    select(State.Code,County.Code,Site.Num,Arithmetic.Mean) %>%
+    slice(1:5)
+print(a3)
+```
+
+## Question 4.
+What is the absolute difference in the average levels of "EC PM2.5 LC TOR" between the states California and Arizona, across all time and all monitoring sites?
+```{r Q4}
+a4<-daily_spec %>%
+    filter(Parameter.Name == "EC PM2.5 LC TOR" &
+             (State.Name == "California" | State.Name == "Arizona")) %>%
+    group_by(factor(State.Name)) %>%
+    summarize(mean = mean(Arithmetic.Mean,na.rm = TRUE))
+abs(a4[1,2]-a4[2,2])
+```
+
+## Question 5.
+What is the median level of "OC PM2.5 LC TOR" in the western United States, across all time? Define western as any monitoring location that has a Longitude LESS THAN -100.
+```{r Q5}
+a5<-daily_spec %>%
+    filter(Longitude < -100 & Parameter.Name == "OC PM2.5 LC TOR") %>%
+    select(Arithmetic.Mean) %>%
+    summarize(median = median(Arithmetic.Mean))
+print(a5)
+```
