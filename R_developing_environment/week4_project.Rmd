@@ -102,3 +102,19 @@ a5<-daily_spec %>%
     summarize(median = median(Arithmetic.Mean))
 print(a5)
 ```
+
+## Question 6.
+Use the readxl package to read the file aqs_sites.xlsx into R (you may need to install the package first). This file contains metadata about each of the monitoring sites in the EPA's monitoring system. In particular, the "Land Use" and "Location Setting" variables contain information about what kinds of areas the monitors are located in (i.e. "residential" vs. "forest").
+
+How many monitoring sites are labelled as both RESIDENTIAL for "Land Use" and SUBURBAN for "Location Setting"?
+```{r Q6}
+a6<-sites %>%
+    filter(Land.Use == "RESIDENTIAL" & Location.Setting == "SUBURBAN") %>%
+    summarize(N = n())
+print(a6)
+```
+
+## Question 7.
+What is the median level of "EC PM2.5 LC TOR" amongst monitoring sites that are labelled as both "RESIDENTIAL" and "SUBURBAN" in the eastern U.S., where eastern is defined as Longitude greater than or equal to -100?
+a7<-sites %>%
+    filter(Land.Use == "RESIDENTIAL" & Location.Setting == "SUBURBAN") %>%
