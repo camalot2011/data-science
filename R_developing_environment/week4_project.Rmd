@@ -116,5 +116,54 @@ print(a6)
 
 ## Question 7.
 What is the median level of "EC PM2.5 LC TOR" amongst monitoring sites that are labelled as both "RESIDENTIAL" and "SUBURBAN" in the eastern U.S., where eastern is defined as Longitude greater than or equal to -100?
-a7<-sites %>%
-    filter(Land.Use == "RESIDENTIAL" & Location.Setting == "SUBURBAN") %>%
+```{r Q7}
+merged<-daily_spec %>%
+      mutate(State.Code = as.numeric(State.Code),
+             County.Code = as.numeric(County.Code),
+             Site.Number = as.numeric(Site.Num)) %>%
+      left_join(sites,by = c("State.Code","County.Code","Site.Number"))
+a7<-merged %>%
+    filter(Land.Use == "RESIDENTIAL" & 
+           Location.Setting == "SUBURBAN" &
+           Longitude.x >= -100 &
+           Parameter.Name == "EC PM2.5 LC TOR") %>%
+    summarize(median = median(Arithmetic.Mean,na.rm = TRUE))
+print(a7)
+```
+    
+
+## Question 8.
+Amongst monitoring sites that are labeled as COMMERCIAL for "Land Use", which month of the year has the highest average levels of "Sulfate PM2.5 LC"?
+```{r Q8}
+library(lubridate)
+a8<-merged %>%
+    mutate(datetime = ymd(Date.Local),
+           month = months(datetime)) %>%
+    filter(Land.Use == "COMMERCIAL" & 
+           Parameter.Name == "Sulfate PM2.5 LC") %>%
+    group_by(month) %>%
+    summarize(mean = mean(Arithmetic.Mean, na.rm = TRUE)) %>%
+    arrange(desc(mean))
+print(a8[1,])
+```
+
+## Question 9.
+Take a look at the data for the monitoring site identified by State Code 6, County Code 65, and Site Number 8001 (this monitor is in California). At this monitor, for how many days is the sum of "Sulfate PM2.5 LC" and "Total Nitrate PM2.5 LC" greater than 10?
+
+For each of the chemical constituents, there will be some dates that have multiple `Arithmetic Mean` values at this monitoring site. When there are multiple values on a given date, take the average of the constituent values for that date.
+```{r Q9}
+a9<-merged %>%
+    filter(State.Code == 6 &
+           County.Code == 65 &
+           Site.Number == 8001 &
+           (Parameter.Name == "Sulfate PM2.5 LC" |
+           Parameter.Name == "Total Nitrate PM2.5 LC")) %>%
+    mutate(datetime = ymd(Date.Local)) %>%
+    select(datetime,Parameter.Name,Arithmetic.Mean) %>%
+    group_by(datetime,factor(Parameter.Name)) %>%
+    summarize(mean = mean(Arithmetic.Mean)) %>%
+    group_by(datetime) %>%
+    summarize(measure = sum(mean)) %>%
+    filter(measure > 10)
+print(dim(a9)[1])
+```
