@@ -167,3 +167,34 @@ a9<-merged %>%
     filter(measure > 10)
 print(dim(a9)[1])
 ```
+
+## Question 10.
+Which monitoring site in the dataset has the highest correlation between "Sulfate PM2.5 LC" and "Total Nitrate PM2.5 LC" across all dates? Identify the monitoring site by it's State, County, and Site Number code.
+
+For each of the chemical constituents, there will be some dates that have multiple Sample.Value's at a monitoring site. When there are multiple values on a given date, take the average of the constituent values for that date.
+
+Correlations between to variables can be computed with the cor() function.
+```{r Q10}
+a10<-merged %>%
+    filter(Parameter.Name == "Sulfate PM2.5 LC" |
+           Parameter.Name == "Total Nitrate PM2.5 LC") %>%
+    mutate(datetime = ymd(Date.Local)) %>%
+    select(datetime,Parameter.Name,Arithmetic.Mean,
+           State.Code,County.Code,Site.Number) %>%
+    mutate(Parameter.Name = gsub(" ","_",Parameter.Name)) %>%
+    group_by(datetime,Parameter.Name,
+             State.Code,County.Code,Site.Number) %>%
+    summarize(mean = mean(Arithmetic.Mean)) %>%
+    spread(key = Parameter.Name,value = mean, fill = NA) %>%
+    filter(!is.na(Sulfate_PM2.5_LC) &  
+           !is.na(Total_Nitrate_PM2.5_LC)) %>%
+    group_by(State.Code,County.Code,Site.Number) %>%
+    summarize(corr = cor(Sulfate_PM2.5_LC,Total_Nitrate_PM2.5_LC)) %>%
+    arrange(desc(corr))
+print(a10[1,])
+```
+
+## remove the data directory
+```{r remove}
+unlink("~/R_envir_week4",recursive = TRUE)
+```
