@@ -10,7 +10,7 @@ address = input("Enter location:")
 url = serviceurl + urllib.parse.urlencode({"address": address})
 
 print("Retrieving:", url)
-data = urlopen(url).read()
+data = urlopen(url).read().decode()
 print("Retrieved", len(data),"characters")
 
 try:
