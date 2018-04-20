@@ -30,14 +30,14 @@ answer_zero()
 
 #%% Question 1
 def answer_one():
-    return df[df['Gold'] == df['Gold'].max()].index.tolist()
+    return df['Gold'].idx()
 
 answer_one()
 
 #%% Question 2
 def answer_two():
     diff = abs(df['Total']-df['Total.1'])
-    return diff[diff == diff.max()].index.tolist()
+    return diff.idxmax()
 
 answer_two()
 
@@ -45,7 +45,7 @@ answer_two()
 def answer_three():
     somegold = df[(df['Gold'] > 0) & (df['Gold.1']>0)]
     perc_diff = abs(somegold['Gold']-somegold['Gold.1'])/somegold['Gold.2']
-    return perc_diff[perc_diff == perc_diff.max()].index.tolist()
+    return perc_diff.idxmax()
 
 answer_three()
 
