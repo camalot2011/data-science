@@ -27,6 +27,8 @@ def answer_six():
     county = county.set_index('STNAME')
     popdata = county['CENSUS2010POP']
     df = pd.DataFrame(columns = ['pop'])
+    # District of Columbia has only one county, check to see if that's
+    # the case. Otherwise, the funtion will blow up.
     for i in popdata.index.unique():
         if np.prod(popdata.loc[i].shape) > 1:
             descounties = popdata.loc[i].sort_values(ascending=False)
@@ -38,3 +40,26 @@ def answer_six():
     return list(top3[:3].index)
 
 answer_six()
+
+#%% Question 7
+def answer_seven():
+    county = census_df.copy()
+    county = county[county['SUMLEV']==50]
+    county = county.set_index(['CTYNAME'])
+    popdata = county[['POPESTIMATE2010',
+                     'POPESTIMATE2011',
+                     'POPESTIMATE2012',
+                     'POPESTIMATE2013',
+                     'POPESTIMATE2014',
+                     'POPESTIMATE2015']]
+    return (popdata.T.max()-popdata.T.min()).sort_values(ascending=False).idxmax()
+
+answer_seven()
+
+#%% Question 8
+def answer_eight():
+    return census_df[((census_df['REGION']==1)|(census_df['REGION']==2))&
+            (census_df['CTYNAME'] == 'Washington County')&
+            (census_df['POPESTIMATE2015']>census_df['POPESTIMATE2014'])][['STNAME','CTYNAME']]
+
+answer_eight()    
