@@ -232,4 +232,77 @@ def answer_ten():
     return Top15.sort_values(by = '% Renewable',ascending = True).loc[:,'HighRenew']
       
 
-high_renew = answer_ten()  
+high_renew = answer_ten()
+#%% Question 11
+def answer_eleven():
+    Top15 = answer_one()
+    Top15['PopEst'] = Top15['Energy Supply'] / Top15['Energy Supply per Capital']
+    ContinentDict  = {'China':'Asia', 
+                  'United States':'North America', 
+                  'Japan':'Asia', 
+                  'United Kingdom':'Europe', 
+                  'Russian Federation':'Europe', 
+                  'Canada':'North America', 
+                  'Germany':'Europe', 
+                  'India':'Asia',
+                  'France':'Europe', 
+                  'South Korea':'Asia', 
+                  'Italy':'Europe', 
+                  'Spain':'Europe', 
+                  'Iran':'Asia',
+                  'Australia':'Australia', 
+                  'Brazil':'South America'}
+    data = pd.concat([Top15,pd.Series(ContinentDict,
+                                      name = 'Continent',
+                                      index = ContinentDict.keys())],
+                    join = 'outer',axis = 1)
+    data = (data.reset_index()
+            .set_index('Continent')
+            .loc[:,'PopEst']
+            .groupby('Continent'))
+    return pd.DataFrame({'size': data.count(),
+                         'sum': data.sum(),
+                         'mean': data.mean(),
+                         'std': data.std()},
+                         index = data.count().index,
+                         )
+    
+Popstat = answer_eleven()
+#%% Question 12
+def answer_twelve():
+    Top15 = answer_one()
+    Top15['HighRenew'] = (pd.cut(Top15['% Renewable'],
+         bins = 5,right = False, labels = range(5)))
+    Top15['PopEst'] = Top15['Energy Supply'] / Top15['Energy Supply per Capital']
+    ContinentDict  = {'China':'Asia', 
+                  'United States':'North America', 
+                  'Japan':'Asia', 
+                  'United Kingdom':'Europe', 
+                  'Russian Federation':'Europe', 
+                  'Canada':'North America', 
+                  'Germany':'Europe', 
+                  'India':'Asia',
+                  'France':'Europe', 
+                  'South Korea':'Asia', 
+                  'Italy':'Europe', 
+                  'Spain':'Europe', 
+                  'Iran':'Asia',
+                  'Australia':'Australia', 
+                  'Brazil':'South America'}
+    data = pd.concat([Top15,pd.Series(ContinentDict,
+                                      name = 'Continent',
+                                      index = ContinentDict.keys())],
+                    join = 'outer',axis = 1)
+    return (data.groupby(['Continent','HighRenew'])
+                .count()
+                .loc[:,'PopEst'])
+    
+cont_renew_count = answer_twelve()
+#%% Question 13
+def answer_thirteen():
+    Top15 = answer_one()
+    Top15['PopEst'] = Top15['Energy Supply'] / Top15['Energy Supply per Capital']
+    data = Top15.loc[:,'PopEst']
+    return data.apply(lambda x:'{:,}'.format(x))
+
+comma_num = answer_thirteen()    
