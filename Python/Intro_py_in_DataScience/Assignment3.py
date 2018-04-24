@@ -186,3 +186,50 @@ def answer_six():
                  Top15.loc[Top15['% Renewable'].idxmax(),'% Renewable']))
 
 renewable = answer_six()
+#%% Question 7
+def answer_seven():
+    Top15 = answer_one()
+    Top15['Ratio'] = Top15['Self-citations']/Top15['Citations']
+    return tuple((Top15['Ratio'].idxmax(),
+                  Top15.loc[Top15['Ratio'].idxmax(),'Ratio']))
+    
+ratio = answer_seven()
+#%% Question 8
+def answer_eight():
+    Top15 = answer_one()
+    Top15['Popestimate'] = Top15['Energy Supply']/Top15['Energy Supply per Capital']
+    return Top15.sort_values(by = 'Popestimate',ascending = False).index[2]
+
+thirdpop = answer_eight()
+#%% Question 9
+def answer_nine():
+    Top15 = answer_one()
+    Top15['Popestimate'] = Top15['Energy Supply']/Top15['Energy Supply per Capital']
+    Top15['Citable docs per person'] = Top15['Citable documents']/Top15['Popestimate']
+    return (Top15[['Citable docs per person','Energy Supply per Capital']]
+                .corr(method = 'pearson')
+                .loc['Citable docs per person','Energy Supply per Capital'])
+    
+correlation = answer_nine()
+
+def plot9():
+    import matplotlib as plt
+    
+    Top15 = answer_one()
+    Top15['PopEst'] = Top15['Energy Supply'] / Top15['Energy Supply per Capital']
+    Top15['Citable docs per Capita'] = Top15['Citable documents'] / Top15['PopEst']
+    Top15.plot(x='Citable docs per Capita', y='Energy Supply per Capital', kind='scatter', xlim=[0, 0.0006])
+    
+plot9()
+#%% Question 10
+def answer_ten():
+    Top15 = answer_one()
+    center = Top15['% Renewable'].median()
+    low = Top15['% Renewable'].min() - 0.0001
+    high = Top15['% Renewable'].max() + 0.0001
+    Top15['HighRenew'] = (pd.cut(Top15['% Renewable'],
+         bins = [low,center,high],right = False, labels = [0,1]))
+    return Top15.sort_values(by = '% Renewable',ascending = True).loc[:,'HighRenew']
+      
+
+high_renew = answer_ten()  
