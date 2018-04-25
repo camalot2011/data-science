@@ -11,7 +11,7 @@ def answer_one():
                        names=['Country','Energy Supply',
                               'Energy Supply per Capital',
                               '% Renewable'],
-                       usecols='C:F',na_values='...')
+                       usecols=[1,3,4,5],na_values='...')
 #convert the petajoules to gigajoules in 'Energy Supply'
     energy['Energy Supply'] *= 1E6
 #remove the footer number
@@ -78,7 +78,7 @@ def answer_two():
                        names=['Country','Energy Supply',
                               'Energy Supply per Capital',
                               '% Renewable'],
-                       usecols='C:F',na_values='...')
+                       usecols=[1,3,4,5],na_values='...')
 #convert the petajoules to gigajoules in 'Energy Supply'
     energy['Energy Supply'] *= 1E6
 #remove the footer number
@@ -259,7 +259,7 @@ def answer_eleven():
     data = (data.reset_index()
             .set_index('Continent')
             .loc[:,'PopEst']
-            .groupby('Continent'))
+            .groupby(level=0))
     return pd.DataFrame({'size': data.count(),
                          'sum': data.sum(),
                          'mean': data.mean(),
