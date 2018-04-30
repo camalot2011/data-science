@@ -25,3 +25,5 @@ states = {'OH': 'Ohio', 'KY': 'Kentucky', 'AS': 'American Samoa',
           'MA': 'Massachusetts', 'GA': 'Georgia', 'ND': 'North Dakota', 
           'VA': 'Virginia'}
 
+fname = 'university_towns.txt'
+fhandle = open(fname)

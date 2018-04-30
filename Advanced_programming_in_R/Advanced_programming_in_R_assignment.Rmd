@@ -1,0 +1,69 @@
+---
+title: "Advanced R programming final assignment"
+author: "Zhandi Liao"
+date: "April 29, 2018"
+output: html_document
+---
+Coursera "Adanced R programming" Functional and Object-Oriented Programming
+==================================================================================
+## Part 1: Factorial Function
+
+The objective of Part 1 is to write a function that computes the factorial of an integer greater than or equal to 0. Recall that the factorial of a number n is n * (n-1) * (n - 2) * . * 1. The factorial of 0 is defined to be 1. Before taking on this part of the assignment, you may want to review the section on Functional Programming in this course.
+```{r part1, echo=TRUE}
+library(purrr)
+
+factorial_loop <- function(n) {
+  stopifnot(n>=0)
+  ans = 1
+  if(n==0){
+      ans
+  } else for(i in 1:n){
+      ans <- ans*i
+  }
+  return(ans)
+}
+
+factorial_reduce <- function(n){
+  stopifnot(n>=0)
+  if(n==0){return(1)}
+  else return(reduce(1:n,function(x,y){x*y}))
+}
+
+factorial_func <- function(n){
+  stopifnot(n>=0)
+  if(n==0){return(1)}
+  else return(n*factorial_func(n-1))
+}
+
+fac_table <- c(1,1,rep(NA,100))
+
+factorial_mem <- function(n){
+  stopifnot(n>=0)
+  if(!is.na(fac_table[n+1])){
+    return(fac_table[n+1])
+  } else {
+    fac_table[n] <<- factorial_mem(n-1)
+    return(n*fac_table[n])
+  }
+}
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
