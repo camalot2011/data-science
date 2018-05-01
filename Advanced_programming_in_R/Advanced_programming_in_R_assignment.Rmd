@@ -38,13 +38,13 @@ factorial_loop <- function(n) {
 factorial_reduce <- function(n){
   stopifnot(n>=0)
   if(n==0){return(1)}
-  else return(reduce(1:n,function(x,y){x*y}))
+  else return(reduce(1:n,function(x,y){as.numeric(x*y)}))
 }
 
 factorial_func <- function(n){
   stopifnot(n>=0)
   if(n==0){return(1)}
-  else return(n*factorial_func(n-1))
+  else return(as.numeric(n*factorial_func(n-1)))
 }
 
 fac_table <- c(1,1,rep(NA,500))
@@ -55,7 +55,7 @@ factorial_mem <- function(n){
     return(fac_table[n+1])
   } else {
     fac_table[n] <<- factorial_mem(n-1)
-    return(n*fac_table[n])
+    return(as.numeric(n*fac_table[n]))
   }
 }
 ```
@@ -64,7 +64,7 @@ factorial_mem <- function(n){
 
 After writing your four versions of the Factorial function, use the microbenchmark package to time the operation of these functions and provide a summary of their performance. In addition to timing your functions for specific inputs, make sure to show a range of inputs in order to demonstrate the timing of each function for larger inputs.
 
-```{r part1_output,echo= FALSE}
+```{r part1_output,echo= TRUE}
 loop_data <- map(1:100,function(x){microbenchmark(factorial_loop(x),times=101)$time})
 loop_data <- as.data.frame(loop_data)
 names(loop_data) <- 1:100
@@ -120,5 +120,15 @@ mem_data %<>%
             std=sd(time)) %>%
   mutate(num = as.numeric(num)) %>%
   arrange(num)
+```
+
+Generate the export data with the mean running time
+```{r part1_output, echo=TRUE}
+mydata<-data.frame(loop = loop_data$mean,
+                   reduce = reduce_data$mean,
+                   func = func_data$mean,
+                   mem = mem_data$mean,
+                   row.names = loop_data$num)
+write.csv(mydata, file = "part1_output.txt")
 ```
 
