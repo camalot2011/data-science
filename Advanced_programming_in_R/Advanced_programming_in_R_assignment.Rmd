@@ -6,11 +6,23 @@ output: html_document
 ---
 Coursera "Adanced R programming" Functional and Object-Oriented Programming
 ==================================================================================
-## Part 1: Factorial Function
+## Part 1: Factorial Function-- code
 
 The objective of Part 1 is to write a function that computes the factorial of an integer greater than or equal to 0. Recall that the factorial of a number n is n * (n-1) * (n - 2) * . * 1. The factorial of 0 is defined to be 1. Before taking on this part of the assignment, you may want to review the section on Functional Programming in this course.
-```{r part1, echo=TRUE}
+
+For this Part you will need to write four different versions of the Factorial function:
+
+Factorial_loop: a version that computes the factorial of an integer using looping (such as a for loop)
+Factorial_reduce: a version that computes the factorial using the reduce() function in the purrr package. Alternatively, you can use the Reduce() function in the base package.
+Factorial_func: a version that uses recursion to compute the factorial.
+Factorial_mem: a version that uses memoization to compute the factorial.
+
+```{r part1_code, echo=TRUE}
 library(purrr)
+library(microbenchmark)
+library(magrittr)
+library(tidyr)
+library(dplyr)
 
 factorial_loop <- function(n) {
   stopifnot(n>=0)
@@ -35,7 +47,7 @@ factorial_func <- function(n){
   else return(n*factorial_func(n-1))
 }
 
-fac_table <- c(1,1,rep(NA,100))
+fac_table <- c(1,1,rep(NA,500))
 
 factorial_mem <- function(n){
   stopifnot(n>=0)
@@ -48,22 +60,65 @@ factorial_mem <- function(n){
 }
 ```
 
-## R Markdown
+## Part 1: Factorial Function-- output
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+After writing your four versions of the Factorial function, use the microbenchmark package to time the operation of these functions and provide a summary of their performance. In addition to timing your functions for specific inputs, make sure to show a range of inputs in order to demonstrate the timing of each function for larger inputs.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r part1_output,echo= FALSE}
+loop_data <- map(1:100,function(x){microbenchmark(factorial_loop(x),times=101)$time})
+loop_data <- as.data.frame(loop_data)
+names(loop_data) <- 1:100
+loop_data %<>%
+  gather(num,time) %>%
+  group_by(num) %>%
+  summarise(min = min(time),
+            median = median(time),
+            max=max(time),
+            mean=mean(time),
+            std=sd(time)) %>%
+  mutate(num = as.numeric(num)) %>%
+  arrange(num)
 
-```{r cars}
-summary(cars)
+reduce_data <- map(1:100,function(x){microbenchmark(factorial_reduce(x),times = 101)$time})
+reduce_data <- as.data.frame(reduce_data)
+names(reduce_data) <- 1:100
+reduce_data %<>%
+  gather(num,time) %>%
+  group_by(num) %>%
+  summarise(min = min(time),
+            median = median(time),
+            max=max(time),
+            mean=mean(time),
+            std=sd(time)) %>%
+  mutate(num = as.numeric(num)) %>%
+  arrange(num)
+
+func_data <- map(1:100,function(x){microbenchmark(factorial_func(x),times = 101)$time})
+func_data <- as.data.frame(func_data)
+names(func_data) <- 1:100
+func_data %<>%
+  gather(num,time) %>%
+  group_by(num) %>%
+  summarise(min = min(time),
+            median = median(time),
+            max=max(time),
+            mean=mean(time),
+            std=sd(time)) %>%
+  mutate(num = as.numeric(num)) %>%
+  arrange(num)
+
+mem_data <- map(1:100,function(x){microbenchmark(factorial_mem(x),times = 101)$time})
+mem_data <- as.data.frame(mem_data)
+names(mem_data) <- 1:100
+mem_data %<>%
+  gather(num,time) %>%
+  group_by(num) %>%
+  summarise(min = min(time),
+            median = median(time),
+            max=max(time),
+            mean=mean(time),
+            std=sd(time)) %>%
+  mutate(num = as.numeric(num)) %>%
+  arrange(num)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
