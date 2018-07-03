@@ -1,0 +1,42 @@
+---
+title: "stock_v1"
+author: "Zhandi Liao"
+date: "June 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Stock_checking function
+
+This script is made to check the US stock market for the past three weeks trades. 
+
+```{r dependency, eval=TRUE,echo=FALSE}
+library(quantmod)
+library(BatchGetSymbols)
+library(tidyverse)
+```
+
+## Download the trade info in the past 5 weeks from Yahoo finance
+
+```{r download,echo=FALSE}
+# Getting the symbols for all the stocks
+all_stock_info <- stockSymbols(exchange = c("AMEX","NASDAQ","NYSE"),
+                               sort.by = c("Exchange","Symbol"),quiet = FALSE)
+tickers <- all_stock_info$Symbol
+# Download from Yahoo finance
+start <- Sys.Date() - 30
+end <- Sys.Date()
+trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end, 
+                          thresh.bad.data = 0.75,do.complete.data = TRUE,
+                          do.cache = TRUE,cache.folder = "BGS_Cache")
+# Data processing: price 
+trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.adjusted < 15) %>%
+                    select(ticker,ref.date,price.high:price.close) %>%
+                    mutate(price.typical = (price.high+price.low+price.close)/3) %>%
+                    split(f = ticker)
+```
+
+
