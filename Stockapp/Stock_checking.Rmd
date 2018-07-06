@@ -36,8 +36,25 @@ trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end,
 trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.adjusted < 15) %>%
                     select(ticker,ref.date,price.high:price.close) %>%
                     mutate(price.typical = (price.high+price.low+price.close)/3)
-# Data analysis:
+
 ticker_processed <- unique(trades_processed$ticker)
+ticker_boll <- data.frame()
+ticker_picked <- c()
+for (i in ticker_processed) {
+    l <- trades_processed %>% filter(ticker == i)
+    if (count(l)<41) next
+    else {
+      Boll <- BBands(l$price.typical,n=20,SMA,sd=2)
+      l_boll <- l %>% mutate(BBands = Boll[,2]) %>% select(ticker,BBands)
+      ticker_boll <- rbind(ticker_boll,l_boll)
+      if ((max(l_boll$BBands[26:41])> 1.05*l_boll$BBands[26]) | (min(l_boll$BBands[26:41]) < 0.95*l_boll$BBands[26])) {
+          ticker_picked <- c(ticker_picked,i)
+      }
+    }
+}
+
+# Merge data
+trades_processed_boll <- full_join(trades_processed,ticker_boll)
 
 ```
 
