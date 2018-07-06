@@ -27,16 +27,34 @@ all_stock_info <- stockSymbols(exchange = c("AMEX","NASDAQ","NYSE"),
                                sort.by = c("Exchange","Symbol"),quiet = FALSE)
 tickers <- all_stock_info$Symbol
 # Download from Yahoo finance
-start <- Sys.Date() - 30
+start <- Sys.Date() - 60
 end <- Sys.Date()
 trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end, 
-                          thresh.bad.data = 0.75,do.complete.data = TRUE,
-                          do.cache = TRUE,cache.folder = "BGS_Cache")
+                          thresh.bad.data = 0.75,bench.ticker = "QQQ", do.complete.data = TRUE,
+                          do.cache = TRUE,cache.folder = "~/BGS_Cache")
 # Data processing: price 
 trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.adjusted < 15) %>%
                     select(ticker,ref.date,price.high:price.close) %>%
-                    mutate(price.typical = (price.high+price.low+price.close)/3) %>%
-                    split(f = ticker)
+                    mutate(price.typical = (price.high+price.low+price.close)/3)
+
+ticker_processed <- unique(trades_processed$ticker)
+ticker_boll <- data.frame()
+ticker_picked <- c()
+for (i in ticker_processed) {
+    l <- trades_processed %>% filter(ticker == i)
+    if (count(l)<41) next
+    else {
+      Boll <- BBands(l$price.typical,n=20,SMA,sd=2)
+      l_boll <- l %>% mutate(BBands = Boll[,2]) %>% select(ticker,BBands)
+      ticker_boll <- rbind(ticker_boll,l_boll)
+      if ((max(l_boll$BBands[26:41])> 1.05*l_boll$BBands[26]) | (min(l_boll$BBands[26:41]) < 0.95*l_boll$BBands[26])) {
+          ticker_picked <- c(ticker_picked,i)
+      }
+    }
+}
+
+# Merge data
+trades_processed_boll <- full_join(trades_processed,ticker_boll)
 ```
 
 
