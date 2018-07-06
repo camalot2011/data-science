@@ -19,7 +19,7 @@ library(BatchGetSymbols)
 library(tidyverse)
 ```
 
-## Download the trade info in the past 5 weeks from Yahoo finance
+## Download the trade info in the past 3 months from Yahoo finance
 
 ```{r download,echo=FALSE}
 # Getting the symbols for all the stocks
@@ -32,7 +32,11 @@ end <- Sys.Date()
 trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end, 
                           thresh.bad.data = 0.75,bench.ticker = "QQQ",do.complete.data = TRUE,
                           do.cache = TRUE,cache.folder = "~/BGS_Cache")
-# Data processing: price 
+```
+
+## Data processing: pick the price between $0.50 and $15.00, calculate the nearest three week boll bands, filter
+## only the ones that fluctuate larger than 5%
+```{r data_processing}
 trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.adjusted < 15) %>%
                     select(ticker,ref.date,price.high:price.close) %>%
                     mutate(price.typical = (price.high+price.low+price.close)/3)
@@ -52,8 +56,9 @@ for (i in ticker_processed) {
       }
     }
 }
-
-# Merge data
+```
+## Merge data
+```{r data_merging}
 trades_processed_boll <- filter(trades_processed, trades_processed$ticker %in% ticker_picked)
 ticker_boll_picked <- filter(ticker_boll,ticker_boll$ticker %in% ticker_picked)
 trades_picked <- mutate(trades_processed_boll, BBands = ticker_boll_picked$BBands)
