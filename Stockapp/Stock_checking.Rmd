@@ -49,7 +49,8 @@ for (i in ticker_processed) {
     if (count(l)<62) next
     else {
       Boll <- BBands(l$price.typical,n=20,SMA,sd=2)
-      l_boll <- l %>% mutate(BBands = Boll[,2]) %>% select(ticker,BBands)
+      l_boll <- l %>% mutate(BBands = Boll[,2],Bdn = Boll[,1], Bup = Boll[,3]) %>%
+                select(ticker,BBands, Bdn, Bup)
       ticker_boll <- rbind(ticker_boll,l_boll)
       if ((max(l_boll$BBands[47:62])> 1.05*l_boll$BBands[47]) | (min(l_boll$BBands[47:62]) < 0.95*l_boll$BBands[47])) {
           ticker_picked <- c(ticker_picked,i)
@@ -61,7 +62,7 @@ for (i in ticker_processed) {
 ```{r data_merging}
 trades_processed_boll <- filter(trades_processed, trades_processed$ticker %in% ticker_picked)
 ticker_boll_picked <- filter(ticker_boll,ticker_boll$ticker %in% ticker_picked)
-trades_picked <- mutate(trades_processed_boll, BBands = ticker_boll_picked$BBands)
+trades_picked <- mutate(trades_processed_boll, BBands = ticker_boll_picked$BBands, Bdn = ticker_boll_picked$Bdn, Bup = ticker_boll_picked$Bup)
 
 ```
 
