@@ -17,6 +17,7 @@ This script is made to check the US stock market for the past three weeks trades
 library(quantmod)
 library(BatchGetSymbols)
 library(tidyverse)
+library(xlsx)
 ```
 
 ## Download the trade info in the past 3 months from Yahoo finance
@@ -64,6 +65,8 @@ trades_processed_boll <- filter(trades_processed, trades_processed$ticker %in% t
 ticker_boll_picked <- filter(ticker_boll,ticker_boll$ticker %in% ticker_picked)
 trades_picked <- mutate(trades_processed_boll, BBands = ticker_boll_picked$BBands, Bdn = ticker_boll_picked$Bdn, Bup = ticker_boll_picked$Bup)
 
+ticker_picked <- matrix(ticker_picked,ncol = 10, byrow = TRUE)
+write.xlsx(ticker_picked,"./Stock_picked.xlsx")
 ```
 
 
