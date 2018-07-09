@@ -69,7 +69,7 @@ trades_picked <- mutate(trades_processed_boll, BBands = ticker_boll_picked$BBand
 
 ```
 
-##Get symbols that have large 40% price drops within 2 months
+## Get symbols that have large 40% price drops within 2 months
 ```{r filter_price_drop}
 price_drop_ratio <- 0.15
 date_gap <- 1
