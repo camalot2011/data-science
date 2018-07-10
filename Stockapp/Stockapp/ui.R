@@ -31,7 +31,10 @@ shinyUI(fluidPage(
                     min = 0,
                     max = 1,
                     step = 0.01, 
-                    value = 0.1)
+                    value = 0.1),
+       # Put up an action button
+       actionButton(inputId = "update",
+                    label = "Update View")
        
     ),
     # Show a table with the picked stock symbols
