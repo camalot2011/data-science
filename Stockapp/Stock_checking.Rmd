@@ -48,7 +48,7 @@ ticker_picked <- c()
 price_fluctuation <- 0.1
 for (i in ticker_processed) {
     l <- trades_processed %>% filter(ticker == i)
-    if (count(l)<62) next
+    if (count(l)<dim(trades$df.tickers[which(trades$df.tickers$ticker == "QQQ"),])[1]) next
     else {
       Boll <- BBands(l$price.typical,n=20,SMA,sd=2)
       l_boll <- l %>% mutate(BBands = Boll[,2],Bdn = Boll[,1], 
@@ -56,7 +56,7 @@ for (i in ticker_processed) {
                              Width = (Bup-Bdn)/BBands) %>%
                       select(ticker,BBands, Bdn, Bup, pctB, Width)
       ticker_boll <- rbind(ticker_boll,l_boll)
-      if ((max(l_boll$BBands[47:62])< (1+price_fluctuation)*l_boll$BBands[47]) & (min(l_boll$BBands[47:62]) > (1-price_fluctuation)*l_boll$BBands[47])) {
+      if ((max(tail(l_boll$BBands,15))< (1+price_fluctuation)*l_boll$BBands[length(l_boll$BBands)-15]) & (min(tail(l_boll$BBands,15)) > (1-price_fluctuation)*l_boll$BBands[length(l_boll$BBands)-15])) {
           ticker_picked <- c(ticker_picked,i)
       }
     }
@@ -78,7 +78,7 @@ trades_picked <- mutate(trades_processed_boll,
 
 ## Get symbols that have large 40% price drops within 2 months
 ```{r filter_price_drop}
-price_drop_ratio <- 0.15
+price_drop_ratio <- 0.3
 date_gap <- 1
 ticker_picked2 <- c()
 for (s in ticker_picked) {
