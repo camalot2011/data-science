@@ -85,6 +85,7 @@ for (s in ticker_picked) {
 ticker_picked <- matrix(ticker_picked,ncol = 10, byrow = TRUE)
 ticker_picked2 <- matrix(ticker_picked2,ncol = 10, byrow = TRUE)
 write.xlsx(ticker_picked,"./Stock_picked.xlsx")
+write.xlsx(ticker_picked2,"./Stock_picked2.xlsx")
 ```
 
 
