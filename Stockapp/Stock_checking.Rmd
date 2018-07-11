@@ -35,8 +35,7 @@ trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end,
                           do.cache = TRUE,cache.folder = "~/BGS_Cache")
 ```
 
-## Data processing: pick the price between $0.50 and $15.00, calculate the nearest three week boll bands, filter
-## only the ones that fluctuate smaller than 5%
+## Data processing: pick the price between $0.50 and $15.00, calculate the boll bands 
 ```{r data_processing}
 trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.adjusted < 15) %>%
                     select(ticker,ref.date,price.high:price.close) %>%
@@ -44,8 +43,6 @@ trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.ad
 #Calculate BBands and select the ones fluctuate larger than 5%
 ticker_processed <- unique(trades_processed$ticker)
 ticker_boll <- data.frame()
-ticker_picked <- c()
-price_fluctuation <- 0.1
 for (i in ticker_processed) {
     l <- trades_processed %>% filter(ticker == i)
     if (count(l)<dim(trades$df.tickers[which(trades$df.tickers$ticker == "QQQ"),])[1]) next
@@ -56,39 +53,46 @@ for (i in ticker_processed) {
                              Width = (Bup-Bdn)/BBands) %>%
                       select(ticker,BBands, Bdn, Bup, pctB, Width)
       ticker_boll <- rbind(ticker_boll,l_boll)
-      if ((max(tail(l_boll$BBands,15))< (1+price_fluctuation)*l_boll$BBands[length(l_boll$BBands)-15]) & (min(tail(l_boll$BBands,15)) > (1-price_fluctuation)*l_boll$BBands[length(l_boll$BBands)-15])) {
-          ticker_picked <- c(ticker_picked,i)
-      }
+      
     }
 }
 
-```
-## Merge data
-```{r data_merging}
-trades_processed_boll <- filter(trades_processed, trades_processed$ticker %in% ticker_picked)
-ticker_boll_picked <- filter(ticker_boll,ticker_boll$ticker %in% ticker_picked)
-trades_picked <- mutate(trades_processed_boll, 
-                        BBands = ticker_boll_picked$BBands, 
-                        Bdn = ticker_boll_picked$Bdn, 
-                        Bup = ticker_boll_picked$Bup,
-                        pctB = ticker_boll_picked$pctB,
-                        Width = ticker_boll_picked$Width)
-
+trades_processed_boll <- trades_processed %>% 
+                         filter(trades_processed$ticker %in% unique(ticker_boll$ticker)) %>%
+                         mutate(BBands = ticker_boll$BBands, 
+                                Bdn = ticker_boll$Bdn, 
+                                Bup = ticker_boll$Bup,
+                                pctB = ticker_boll$pctB,
+                                Width = ticker_boll$Width)
 ```
 
-## Get symbols that have large 40% price drops within 2 months
+## Filter only the ones that fluctuate smaller than 5%
+```{r filter_platform}
+price_fluctuation <- 0.1
+ticker_picked <- c()
+flat_weeks <- 3
+for (t in unique(trades_processed_boll$ticker)) {
+    if ((max(tail(t$BBands,5*flat_weeks))< (1+price_fluctuation) * t$BBands[length(t$BBands)-5*flat_weeks]) & (min(tail(t$BBands,5*flat_weeks)) > (1-price_fluctuation) * t$BBands[length(t$BBands)-5*flat_weeks])) {
+          ticker_picked <- c(ticker_picked,i)
+    }
+}
+```
+
+## Get symbols that have price drops before the flat region
 ```{r filter_price_drop}
-price_drop_ratio <- 0.3
-date_gap <- 1
+price_drop_ratio <- 0.1
+time_span <- 30
 ticker_picked2 <- c()
 for (s in ticker_picked) {
-    l <- trades_picked %>% filter(ticker == s)
-    if ((max(l$price.close[20:47])*(1-price_drop_ratio) >= l$price.close[47]) &
-        ((l[47,2] - l[which.max(l$price.close[20:47]), 2]) > date_gap)) {
+    l <- trades_processed_boll %>% filter(ticker == s)
+    if ((max(tail(l$price.close,time_span))*(1-price_drop_ratio) >= 
+         l$price.close[length(t$BBands)-5*flat_weeks])) {
         ticker_picked2 <- c(ticker_picked2,s)
         }
 }
 
+trades_picked <- filter(trades_processed_boll,trades_processed_boll$ticker %in% ticker_picked)
+trades_picked2 <- filter(trades_processed_boll,trades_processed_boll$ticker %in% ticker_picked2)
 ticker_picked <- matrix(ticker_picked,ncol = 10, byrow = TRUE)
 ticker_picked2 <- matrix(ticker_picked2,ncol = 10, byrow = TRUE)
 write.xlsx(ticker_picked,"./Stock_picked.xlsx")
