@@ -1,11 +1,3 @@
-#
-# This is the server logic of a Shiny web application. You can run the 
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
 
 library(shiny)
 library(quantmod)
@@ -13,54 +5,59 @@ library(BatchGetSymbols)
 library(tidyverse)
 library(xlsx)
 
-  
+data <- read_csv("trades_processed_boll.csv",
+                 col_names = TRUE,
+                 col_types = list(
+                    "X1" = "_",
+                    "ticker" = col_character(),
+                    "ref.date" = col_date(format = ""),
+                    "price.high" = col_double(),
+                    "price.low" = col_double(),
+                    "price.close" = col_double(),
+                    "price.typical" = col_double(),
+                    "BBands" = col_double(),
+                    "Bdn" = col_double(),
+                    "Bup" = col_double(),
+                    "pctB" = col_double(),
+                    "Width" = col_double() 
+                 ))
+
 # Define server logic required to display the table
 shinyServer(function(input, output) {
   
-  #Calculate BBands and select the ones fluctuate larger than 5%
-
-  reactiveA <- eventReactive(input$update,{
-  for (i in ticker_processed) {
-      ticker_processed <- unique(trades_processed$ticker)
-      ticker_boll <- data.frame()
-      ticker_picked <- c()
-      l <- trades_processed %>% filter(ticker == i)
-      if (count(l)<62) next
-      else {
-          Boll <- BBands(l$price.typical,n=20,SMA,sd=2)
-          l_boll <- l %>% mutate(BBands = Boll[,2],Bdn = Boll[,1], Bup = Boll[,3]) %>%
-                          select(ticker,BBands, Bdn, Bup)
-          ticker_boll <- rbind(ticker_boll,l_boll)
-          if ((max(l_boll$BBands[47:62])< (1+input$price_fluctuation)*l_boll$BBands[47]) & 
-              (min(l_boll$BBands[47:62]) > (1-input$price_fluctuation)*l_boll$BBands[47])) {
-                ticker_picked <- c(ticker_picked,i)
+  # Filter only the ones that fluctuate smaller than 5%
+  filter_one <- eventReactive(input$update,{
+    price_fluctuation <- input$price_fluctuation
+    ticker_picked <- c()
+    flat_weeks <- input$flat_weeks
+    for (t in unique(data$ticker)) {
+        l <- data %>% filter(ticker == t)
+        if ((max(tail(l$BBands,5*flat_weeks))< (1+price_fluctuation) * l$BBands[length(l$BBands)-5*flat_weeks]) & (min(tail(l$BBands,5*flat_weeks)) > (1-price_fluctuation) * l$BBands[length(l$BBands)-5*flat_weeks])) {
+            ticker_picked <- c(ticker_picked,t)
       }
     }
-  }
-  
-  trades_processed_boll <- filter(trades_processed, trades_processed$ticker %in% ticker_picked)
-  ticker_boll_picked <- filter(ticker_boll,ticker_boll$ticker %in% ticker_picked)
-  trades_picked <- mutate(trades_processed_boll, BBands = ticker_boll_picked$BBands, 
-                          Bdn = ticker_boll_picked$Bdn, Bup = ticker_boll_picked$Bup)
+    return(ticker_picked)
   })
   
-  reactiveB <- eventReactive(input$update,{
-  
-  date_gap <- 1
-  ticker_picked2 <- c()
-  for (s in ticker_picked) {
-    l <- trades_picked %>% filter(ticker == s)
-    if ((max(l$price.close[20:47])*(1-input$price_drop_ratio) >= l$price.close[47]) &
-        ((l[47,2] - l[which.max(l$price.close[20:47]), 2]) > date_gap)) {
-      ticker_picked2 <- c(ticker_picked2,s)
+  # Get symbols that have price drops before the flat region
+  filter_two <- eventReactive(input$update, {
+    price_drop_ratio <- input$price_drop_ratio
+    time_span <- input$time_span
+    ticker_picked2 <- c()
+    for (s in filter_one()) {
+        l <- data %>% filter(ticker == s)
+        if ((max(tail(l$price.close,time_span))*(1-price_drop_ratio) >= 
+         l$price.close[length(l$BBands)-5*flat_weeks])) {
+            ticker_picked2 <- c(ticker_picked2,s)
+      }
     }
-  }
-  }) 
+    return(ticker_picked2)
+  })
   
   output$view <- renderTable({
     
     # show the picked stock symols
-    ticker_picked2
+    matrix(filter_two(),ncol = 10, byrow = TRUE)
     
   })
   

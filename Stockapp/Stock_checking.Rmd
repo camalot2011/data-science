@@ -28,10 +28,10 @@ all_stock_info <- stockSymbols(exchange = c("AMEX","NASDAQ","NYSE"),
                                sort.by = c("Exchange","Symbol"),quiet = FALSE)
 tickers <- all_stock_info$Symbol
 # Download from Yahoo finance
-start <- Sys.Date() - 90
+start <- Sys.Date() - 365
 end <- Sys.Date()
 trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end, 
-                          thresh.bad.data = 0.75,bench.ticker = "QQQ",do.complete.data = TRUE,
+                          thresh.bad.data = 0.25,bench.ticker = "QQQ",do.complete.data = TRUE,
                           do.cache = TRUE,cache.folder = "~/BGS_Cache")
 ```
 
@@ -68,33 +68,37 @@ trades_processed_boll <- trades_processed %>%
 
 ## Filter only the ones that fluctuate smaller than 5%
 ```{r filter_platform}
-price_fluctuation <- 0.1
+price_fluctuation <- 0.05
 ticker_picked <- c()
 flat_weeks <- 3
 for (t in unique(trades_processed_boll$ticker)) {
-    if ((max(tail(t$BBands,5*flat_weeks))< (1+price_fluctuation) * t$BBands[length(t$BBands)-5*flat_weeks]) & (min(tail(t$BBands,5*flat_weeks)) > (1-price_fluctuation) * t$BBands[length(t$BBands)-5*flat_weeks])) {
-          ticker_picked <- c(ticker_picked,i)
+    l <- trades_processed_boll %>% filter(ticker == t)
+    if ((max(tail(l$BBands,5*flat_weeks))< (1+price_fluctuation) * l$BBands[length(l$BBands)-5*flat_weeks]) & (min(tail(l$BBands,5*flat_weeks)) > (1-price_fluctuation) * l$BBands[length(l$BBands)-5*flat_weeks])) {
+          ticker_picked <- c(ticker_picked,t)
     }
 }
 ```
 
 ## Get symbols that have price drops before the flat region
 ```{r filter_price_drop}
-price_drop_ratio <- 0.1
-time_span <- 30
+price_drop_ratio <- 0.2
+time_span <- 60
 ticker_picked2 <- c()
 for (s in ticker_picked) {
     l <- trades_processed_boll %>% filter(ticker == s)
     if ((max(tail(l$price.close,time_span))*(1-price_drop_ratio) >= 
-         l$price.close[length(t$BBands)-5*flat_weeks])) {
+         l$price.close[length(l$BBands)-5*flat_weeks])) {
         ticker_picked2 <- c(ticker_picked2,s)
-        }
+    }
 }
-
+```
+## File processing
+```{r file_processing}
 trades_picked <- filter(trades_processed_boll,trades_processed_boll$ticker %in% ticker_picked)
 trades_picked2 <- filter(trades_processed_boll,trades_processed_boll$ticker %in% ticker_picked2)
 ticker_picked <- matrix(ticker_picked,ncol = 10, byrow = TRUE)
 ticker_picked2 <- matrix(ticker_picked2,ncol = 10, byrow = TRUE)
+write.csv(trades_processed_boll,"./trades_processed_boll.csv")
 write.xlsx(ticker_picked,"./Stock_picked.xlsx")
 write.xlsx(ticker_picked2,"./Stock_picked2.xlsx")
 ```
