@@ -25,13 +25,6 @@ shinyUI(fluidPage(
                     max = 1,
                     step = 0.01,
                     value = 0.05),
-       # Input the number of weeks for the price platform
-       numericInput(inputId = "flat_weeks",
-                    label = "Please set weeks to look for price platform",
-                    min = 1,
-                    max = 5,
-                    step = 1, 
-                    value = 3),
        # Input the price drop ratio between 0 and 1 with default at 0.1
        numericInput(inputId = "price_drop_ratio",
                     label = "Please set price drop ratio (0.00-1.00)",

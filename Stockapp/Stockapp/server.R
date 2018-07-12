@@ -29,10 +29,10 @@ shinyServer(function(input, output) {
   filter_one <- eventReactive(input$update,{
     price_fluctuation <- input$price_fluctuation
     ticker_picked <- c()
-    flat_weeks <- input$flat_weeks
+    
     for (t in unique(data$ticker)) {
         l <- data %>% filter(ticker == t)
-        if ((max(tail(l$BBands,5*flat_weeks))< (1+price_fluctuation) * l$BBands[length(l$BBands)-5*flat_weeks]) & (min(tail(l$BBands,5*flat_weeks)) > (1-price_fluctuation) * l$BBands[length(l$BBands)-5*flat_weeks])) {
+        if ((max(tail(l$BBands,5*3))< (1+price_fluctuation) * l$BBands[length(l$BBands)-5*3]) & (min(tail(l$BBands,5*3)) > (1-price_fluctuation) * l$BBands[length(l$BBands)-5*3])) {
             ticker_picked <- c(ticker_picked,t)
       }
     }
@@ -47,7 +47,7 @@ shinyServer(function(input, output) {
     for (s in filter_one()) {
         l <- data %>% filter(ticker == s)
         if ((max(tail(l$price.close,time_span))*(1-price_drop_ratio) >= 
-         l$price.close[length(l$BBands)-5*flat_weeks])) {
+         l$price.close[length(l$BBands)-5*3])) {
             ticker_picked2 <- c(ticker_picked2,s)
       }
     }
