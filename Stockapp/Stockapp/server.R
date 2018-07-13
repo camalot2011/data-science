@@ -11,6 +11,7 @@ data <- read_csv("trades_processed_boll.csv",
                     "X1" = "_",
                     "ticker" = col_character(),
                     "ref.date" = col_date(format = ""),
+                    "price.open" = col_double(),
                     "price.high" = col_double(),
                     "price.low" = col_double(),
                     "price.close" = col_double(),
@@ -21,6 +22,20 @@ data <- read_csv("trades_processed_boll.csv",
                     "pctB" = col_double(),
                     "Width" = col_double() 
                  ))
+
+all_stock_info <- read_csv("all_stock_info.csv", 
+                           col_names = TRUE,
+                           col_types = list(
+                             "X1" = "_",
+                             "Symbol" = col_character(),
+                             "Name" = col_character(),
+                             "LastSale" = col_double(),
+                             "MarketCap" = col_character(),
+                             "IPOyear" = col_integer(),
+                             "Sector" = col_character(),
+                             "Industry" = col_character(),
+                             "Exchange" = col_character()
+                           ))
 
 # Define server logic required to display the table
 shinyServer(function(input, output) {
@@ -54,11 +69,34 @@ shinyServer(function(input, output) {
     return(ticker_picked2)
   })
   
+  filter_plot <- reactive({
+    ticker <- data %>% filter(ticker == input$symbol) %>%
+                       mutate(date = as.Date(as.character(ref.date))) %>%
+                       filter(date >= input$daterange[1] & date <= input$daterange[2]) %>%
+                       select(ref.date:price.close)
+    
+  })
+  
   output$view <- renderTable({
     
     # show the picked stock symols
     matrix(filter_two(),ncol = 10, byrow = TRUE)
     
+  })
+  
+  output$ticker <- renderTable({
+    # show the stock symbol informatoin
+    info <- all_stock_info %>%
+            filter(Symbol == input$symbol)
+  })
+  
+  output$Bplot <- renderPlot({
+    # show the financial plot
+    ticker_plot <- filter_plot()
+    ticker_xts <- xts(ticker_plot[,2:5],
+                      order.by = as.Date(as.character(ticker_plot$ref.date)))
+    candleChart(ticker_xts)
+    addBBands()
   })
   
 })

@@ -25,7 +25,7 @@ library(xlsx)
 ```{r download,echo=FALSE}
 # Getting the symbols for all the stocks
 all_stock_info <- stockSymbols(exchange = c("AMEX","NASDAQ","NYSE"),
-                               sort.by = c("Exchange","Symbol"),quiet = FALSE)
+                               sort.by = c("Exchange","Symbol"),quiet = TRUE)
 tickers <- all_stock_info$Symbol
 # Download from Yahoo finance
 start <- Sys.Date() - 365
@@ -38,7 +38,7 @@ trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end,
 ## Data processing: pick the price between $0.50 and $15.00, calculate the boll bands 
 ```{r data_processing}
 trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.adjusted < 15) %>%
-                    select(ticker,ref.date,price.high:price.close) %>%
+                    select(ticker,ref.date,price.open:price.close) %>%
                     mutate(price.typical = (price.high+price.low+price.close)/3)
 #Calculate BBands and select the ones fluctuate larger than 5%
 ticker_processed <- unique(trades_processed$ticker)
@@ -98,9 +98,8 @@ trades_picked <- filter(trades_processed_boll,trades_processed_boll$ticker %in% 
 trades_picked2 <- filter(trades_processed_boll,trades_processed_boll$ticker %in% ticker_picked2)
 ticker_picked <- matrix(ticker_picked,ncol = 10, byrow = TRUE)
 ticker_picked2 <- matrix(ticker_picked2,ncol = 10, byrow = TRUE)
-write.csv(trades_processed_boll,"./trades_processed_boll.csv")
-write.xlsx(ticker_picked,"./Stock_picked.xlsx")
-write.xlsx(ticker_picked2,"./Stock_picked2.xlsx")
+write.csv(trades_processed_boll,"./Stockapp/trades_processed_boll.csv")
+write.csv(all_stock_info,"./Stockapp/all_stock_info.csv")
 ```
 
 

@@ -41,14 +41,29 @@ shinyUI(fluidPage(
                     value = 20),
        # Put up an action button
        actionButton(inputId = "update",
-                    label = "Update View")
+                    label = "Update View"),
+       # Select symbol
+       textInput(inputId = "symbol",
+                 label = "Please enter the symbol of interest:",
+                 value = "AAME"),
+       # Select daterange
+       dateRangeInput(inputId = "daterange",
+                      label = "Date range:",
+                      start = Sys.Date()-344,
+                      end = Sys.Date(),
+                      min = Sys.Date()-365,
+                      max = Sys.Date(),
+                      format = "yyyy-mm-dd")
        
     ),
     # Show a table with the picked stock symbols
     mainPanel(
        
        h3("Stock picked:"),
-       tableOutput("view")
+       tableOutput("view"),
+       h3("Stock of interest:"),
+       tableOutput("ticker"),
+       plotOutput("Bplot")
     )
   )
 ))
