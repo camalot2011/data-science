@@ -53,7 +53,10 @@ shinyUI(fluidPage(
                       end = Sys.Date(),
                       min = Sys.Date()-365,
                       max = Sys.Date(),
-                      format = "yyyy-mm-dd")
+                      format = "yyyy-mm-dd"),
+       # button for updating plot
+       actionButton(inputId = "info",
+                    label = "Get info",)
        
     ),
     # Show a table with the picked stock symbols

@@ -69,12 +69,27 @@ shinyServer(function(input, output) {
     return(ticker_picked2)
   })
   
-  filter_plot <- reactive({
+  filter_plot <- eventReactive(input$info, {
     ticker <- data %>% filter(ticker == input$symbol) %>%
                        mutate(date = as.Date(as.character(ref.date))) %>%
                        filter(date >= input$daterange[1] & date <= input$daterange[2]) %>%
                        select(ref.date:price.close)
     
+  })
+  
+  ticker_info <- eventReactive(input$info, {
+    info <- all_stock_info %>%
+            filter(Symbol == input$symbol)
+  })
+  
+  observeEvent(input$update,{
+    showNotification(
+      "Please wait while calculation is on-going.",
+      duration = 10,
+      closeButton = TRUE,
+      type = "message",
+      session = getDefaultReactiveDomain()
+    )
   })
   
   output$view <- renderTable({
@@ -86,8 +101,7 @@ shinyServer(function(input, output) {
   
   output$ticker <- renderTable({
     # show the stock symbol informatoin
-    info <- all_stock_info %>%
-            filter(Symbol == input$symbol)
+    ticker_info()
   })
   
   output$Bplot <- renderPlot({
