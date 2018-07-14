@@ -40,7 +40,36 @@ trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end,
 trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.adjusted < 15) %>%
                     select(ticker,ref.date,price.open:price.close) %>%
                     mutate(price.typical = (price.high+price.low+price.close)/3)
-#Calculate BBands and select the ones fluctuate larger than 5%
+
+trades_processed_week <- trades_processed %>%
+                            mutate(week = cut(ref.date,breaks = "week")) %>%
+                            group_by(week) %>% 
+                            summarise(ticker = ticker, 
+                                      price.open = mean(price.open),
+                                      price.high = mean(price.high),
+                                      price.low  = mean(price.low),
+                                      price.close= mean(price.close))
+
+trades_processed_month <- trades_processed %>%
+                            mutate(month = cut(ref.date,breaks = "month")) %>%
+                            group_by(week) %>% 
+                            summarise(ticker = ticker, 
+                                      price.open = mean(price.open),
+                                      price.high = mean(price.high),
+                                      price.low  = mean(price.low),
+                                      price.close= mean(price.close))
+
+trades_processed_quarter <- trades_processed %>%
+                            mutate(quarter = cut(ref.date,breaks = "quarter")) %>%
+                            group_by(week) %>% 
+                            summarise(ticker = ticker, 
+                                      price.open = mean(price.open),
+                                      price.high = mean(price.high),
+                                      price.low  = mean(price.low),
+                                      price.close= mean(price.close))
+
+#Calculate BBands
+
 ticker_processed <- unique(trades_processed$ticker)
 ticker_boll <- data.frame()
 for (i in ticker_processed) {
