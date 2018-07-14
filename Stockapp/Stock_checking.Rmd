@@ -98,7 +98,8 @@ trades_picked <- filter(trades_processed_boll,trades_processed_boll$ticker %in% 
 trades_picked2 <- filter(trades_processed_boll,trades_processed_boll$ticker %in% ticker_picked2)
 ticker_picked <- matrix(ticker_picked,ncol = 10, byrow = TRUE)
 ticker_picked2 <- matrix(ticker_picked2,ncol = 10, byrow = TRUE)
-write.csv(trades_processed_boll,"./Stockapp/trades_processed_boll.csv")
+filename <- paste0("./Stockapp/trades_processed_boll",Sys.Date(),".csv")
+write.csv(trades_processed_boll,filename)
 write.csv(all_stock_info,"./Stockapp/all_stock_info.csv")
 ```
 
