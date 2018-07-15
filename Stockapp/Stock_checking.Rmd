@@ -97,8 +97,8 @@ for (t in unique(trades_processed$ticker)) {
 
 ## Get symbols that have price drops before the flat region
 ```{r filter_price_drop}
-price_drop_ratio <- 0.2
-time_span <- 60
+price_drop_ratio <- 0.3
+time_span <- 100
 ticker_picked2 <- c()
 for (s in ticker_picked) {
     l <- trades_processed %>% filter(ticker == s)
@@ -120,8 +120,10 @@ ticker_picked <- matrix(ticker_picked,ncol = 10, byrow = TRUE)
 ticker_picked2 <- matrix(ticker_picked2,ncol = 10, byrow = TRUE)
 filename_daily <- paste0("./Stockapp/trades_processed_daily",".csv")
 filename_weekly <- paste0("./Stockapp/trades_processed_weekly",".csv")
+filename_ticker2 <- paste0("./Stock_picked",Sys.Date(),".xlsx")
 write.csv(trades_processed,filename_daily)
 write.csv(trades_processed_week,filename_weekly)
+write.xlsx(ticker_picked2,filename_ticker2)
 write.csv(all_stock_info,"./Stockapp/all_stock_info.csv")
 ```
 
