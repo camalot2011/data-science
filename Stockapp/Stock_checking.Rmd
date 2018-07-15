@@ -37,62 +37,49 @@ trades <- BatchGetSymbols(tickers = tickers,first.date = start, last.date = end,
 
 ## Data processing: pick the price between $0.50 and $15.00, calculate the boll bands 
 ```{r data_processing}
-trades_processed <- trades$df.tickers %>% filter(price.adjusted > 0.5 & price.adjusted < 15) %>%
-                    select(ticker,ref.date,price.open:price.close) %>%
-                    mutate(price.typical = (price.high+price.low+price.close)/3)
+threshold <- 0.5
+
+benchmark <- threshold * dim(trades$df.tickers[which(trades$df.tickers$ticker == "QQQ"),])[1]
+
+trades_processed <- trades$df.tickers %>% 
+                            filter(!is.na(price.close)) %>%
+                            select(ticker,ref.date,price.open:price.close) %>%
+                            mutate(price.typical = (price.high+price.low+price.close)/3) %>%
+                            group_by(ticker) %>% 
+                            mutate(count = n(),
+                                   price.today = tail(price.close,1)) %>% 
+                            filter(count >= benchmark) %>%
+                            filter(price.today > 0.5 & price.today < 15) %>%
+                            select(ticker:price.typical) %>%
+                            do(cbind(.,BBands(.$price.typical)))
 
 trades_processed_week <- trades_processed %>%
                             mutate(week = cut(ref.date,breaks = "week")) %>%
-                            group_by(week) %>% 
-                            summarise(ticker = ticker, 
-                                      price.open = mean(price.open),
+                            group_by(ticker,week) %>%
+                            summarise(price.open = mean(price.open),
                                       price.high = mean(price.high),
                                       price.low  = mean(price.low),
-                                      price.close= mean(price.close))
+                                      price.close= mean(price.close),
+                                      price.typical = mean(price.typical)) %>%
+                            do(cbind(.,BBands(.$price.typical)))
 
 trades_processed_month <- trades_processed %>%
                             mutate(month = cut(ref.date,breaks = "month")) %>%
-                            group_by(week) %>% 
-                            summarise(ticker = ticker, 
-                                      price.open = mean(price.open),
+                            group_by(ticker, month) %>% 
+                            summarise(price.open = mean(price.open),
                                       price.high = mean(price.high),
                                       price.low  = mean(price.low),
-                                      price.close= mean(price.close))
+                                      price.close= mean(price.close),
+                                      price.typical = mean(price.typical))
 
 trades_processed_quarter <- trades_processed %>%
                             mutate(quarter = cut(ref.date,breaks = "quarter")) %>%
-                            group_by(week) %>% 
-                            summarise(ticker = ticker, 
-                                      price.open = mean(price.open),
+                            group_by(ticker,quarter) %>% 
+                            summarise(price.open = mean(price.open),
                                       price.high = mean(price.high),
                                       price.low  = mean(price.low),
-                                      price.close= mean(price.close))
-
-#Calculate BBands
-
-ticker_processed <- unique(trades_processed$ticker)
-ticker_boll <- data.frame()
-for (i in ticker_processed) {
-    l <- trades_processed %>% filter(ticker == i)
-    if (count(l)<dim(trades$df.tickers[which(trades$df.tickers$ticker == "QQQ"),])[1]) next
-    else {
-      Boll <- BBands(l$price.typical,n=20,SMA,sd=2)
-      l_boll <- l %>% mutate(BBands = Boll[,2],Bdn = Boll[,1], 
-                             Bup = Boll[,3], pctB = Boll[,4],
-                             Width = (Bup-Bdn)/BBands) %>%
-                      select(ticker,BBands, Bdn, Bup, pctB, Width)
-      ticker_boll <- rbind(ticker_boll,l_boll)
-      
-    }
-}
-
-trades_processed_boll <- trades_processed %>% 
-                         filter(trades_processed$ticker %in% unique(ticker_boll$ticker)) %>%
-                         mutate(BBands = ticker_boll$BBands, 
-                                Bdn = ticker_boll$Bdn, 
-                                Bup = ticker_boll$Bup,
-                                pctB = ticker_boll$pctB,
-                                Width = ticker_boll$Width)
+                                      price.close= mean(price.close),
+                                      price.typical = mean(price.typical))
 ```
 
 ## Filter only the ones that fluctuate smaller than 5%
@@ -100,9 +87,9 @@ trades_processed_boll <- trades_processed %>%
 price_fluctuation <- 0.05
 ticker_picked <- c()
 flat_weeks <- 3
-for (t in unique(trades_processed_boll$ticker)) {
-    l <- trades_processed_boll %>% filter(ticker == t)
-    if ((max(tail(l$BBands,5*flat_weeks))< (1+price_fluctuation) * l$BBands[length(l$BBands)-5*flat_weeks]) & (min(tail(l$BBands,5*flat_weeks)) > (1-price_fluctuation) * l$BBands[length(l$BBands)-5*flat_weeks])) {
+for (t in unique(trades_processed$ticker)) {
+    l <- trades_processed %>% filter(ticker == t)
+    if ((max(tail(l$mavg,5*flat_weeks))< (1+price_fluctuation) * l$mavg[length(l$mavg)-5*flat_weeks]) & (min(tail(l$mavg,5*flat_weeks)) > (1-price_fluctuation) * l$mavg[length(l$mavg)-5*flat_weeks])) {
           ticker_picked <- c(ticker_picked,t)
     }
 }
@@ -114,21 +101,27 @@ price_drop_ratio <- 0.2
 time_span <- 60
 ticker_picked2 <- c()
 for (s in ticker_picked) {
-    l <- trades_processed_boll %>% filter(ticker == s)
+    l <- trades_processed %>% filter(ticker == s)
     if ((max(tail(l$price.close,time_span))*(1-price_drop_ratio) >= 
-         l$price.close[length(l$BBands)-5*flat_weeks])) {
+         l$price.close[length(l$mavg)-5*flat_weeks])) {
         ticker_picked2 <- c(ticker_picked2,s)
     }
 }
 ```
 ## File processing
 ```{r file_processing}
-trades_picked <- filter(trades_processed_boll,trades_processed_boll$ticker %in% ticker_picked)
-trades_picked2 <- filter(trades_processed_boll,trades_processed_boll$ticker %in% ticker_picked2)
+trades_picked <- trades_processed %>% 
+                          ungroup() %>%
+                          filter(trades_processed$ticker %in% ticker_picked)
+trades_picked2 <- trades_processed %>% 
+                          ungroup() %>%
+                          filter(trades_processed$ticker %in% ticker_picked2)
 ticker_picked <- matrix(ticker_picked,ncol = 10, byrow = TRUE)
 ticker_picked2 <- matrix(ticker_picked2,ncol = 10, byrow = TRUE)
-filename <- paste0("./Stockapp/trades_processed_boll",Sys.Date(),".csv")
-write.csv(trades_processed_boll,filename)
+filename_daily <- paste0("./Stockapp/trades_processed_daily",".csv")
+filename_weekly <- paste0("./Stockapp/trades_processed_weekly",".csv")
+write.csv(trades_processed,filename_daily)
+write.csv(trades_processed_week,filename_weekly)
 write.csv(all_stock_info,"./Stockapp/all_stock_info.csv")
 ```
 

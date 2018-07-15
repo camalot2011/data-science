@@ -1,11 +1,4 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
+
 
 library(shiny)
 
@@ -18,6 +11,7 @@ shinyUI(fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
+       
        # Input the price-fluctuation range between 0 and 1 with default at 0.05
        numericInput(inputId = "price_fluctuation",
                     label = "Please set price fluctuation range (0.00-1.00):",
@@ -46,6 +40,12 @@ shinyUI(fluidPage(
        textInput(inputId = "symbol",
                  label = "Please enter the symbol of interest:",
                  value = "AAME"),
+       # Select data frequency
+       selectInput(inputId = "data",
+                   label = "Please choose data frequency:",
+                   c("Daily" = "daily",
+                     "Weekly" = "weekly"),
+                  selected = "Daily"),
        # Select daterange
        dateRangeInput(inputId = "daterange",
                       label = "Date range:",
@@ -53,10 +53,7 @@ shinyUI(fluidPage(
                       end = Sys.Date(),
                       min = Sys.Date()-365,
                       max = Sys.Date(),
-                      format = "yyyy-mm-dd"),
-       # button for updating plot
-       actionButton(inputId = "info",
-                    label = "Get info",)
+                      format = "yyyy-mm-dd")
        
     ),
     # Show a table with the picked stock symbols
