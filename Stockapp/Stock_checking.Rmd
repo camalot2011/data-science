@@ -108,6 +108,30 @@ for (s in ticker_picked) {
     }
 }
 ```
+
+## Limit the platform length
+```{r filter_platform_length}
+platform_length <- 5*(6+3)
+ticker_picked3 <- c()
+trades_filter2 <- trades_processed %>%
+                          ungroup() %>%
+                          filter(ticker %in% ticker_picked2) %>%
+                          group_by(ticker) %>%
+                          filter(ref.date >= Sys.Date()-time_span) %>%
+                          mutate(max.date = .[which.max(.$price.close),"ref.date"])
+
+for (u in ticker_picked2) {
+    l <- trades_filter2 %>% filter(ticker == u)
+    if ((tail(l,1)$ref.date - l[which.max(l$price.close),"ref.date"]) >= platform_length) {
+        ticker_picked3 <- c(ticker_picked3,u)
+    }
+  
+}
+                          
+
+
+```
+
 ## File processing
 ```{r file_processing}
 trades_picked <- trades_processed %>% 
