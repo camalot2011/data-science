@@ -1,9 +1,8 @@
 
 library(shiny)
 library(quantmod)
-library(BatchGetSymbols)
+library(plyr)
 library(tidyverse)
-library(xlsx)
 
 daily <- read_csv("trades_processed_daily.csv",
                  col_names = TRUE,
@@ -16,7 +15,6 @@ daily <- read_csv("trades_processed_daily.csv",
                    "price.low" = col_double(),
                    "price.close" = col_double(),
                    "price.typical" = col_double(),
-                   "count" = col_integer(),
                    "dn" = col_double(),
                    "mavg" = col_double(),
                    "up" = col_double(),
@@ -60,14 +58,16 @@ shinyServer(function(input, output) {
   # Filter only the ones that fluctuate smaller than 5%
   filter_one <- eventReactive(input$update,{
     price_fluctuation <- input$price_fluctuation
-    ticker_picked <- c()
     
-    for (t in unique(daily$ticker)) {
-        l <- daily %>% filter(ticker == t)
-        if ((max(tail(l$mavg,5*3))< (1+price_fluctuation) * l$mavg[length(l$mavg)-5*3]) & (min(tail(l$mavg,5*3)) > (1-price_fluctuation) * l$mavg[length(l$mavg)-5*3])) {
-            ticker_picked <- c(ticker_picked,t)
-      }
-    }
+    ticker_picked <- weekly %>%
+      split(weekly$ticker) %>%
+      lapply(tail,3) %>%
+      bind_rows() %>%
+      select(ticker,mavg) %>%
+      group_by(ticker) %>%
+      summarise(avg = mean(mavg),
+                flex = diff(range(mavg))/mean(mavg)) %>%
+      filter(flex < price_fluctuation)
 
     return(ticker_picked)
   })
@@ -76,16 +76,22 @@ shinyServer(function(input, output) {
   filter_two <- eventReactive(input$update, {
     price_drop_ratio <- input$price_drop_ratio
     time_span <- input$time_span
-    ticker_picked2 <- c()
     
-    for (s in filter_one()) {
-        l <- daily %>% filter(ticker == s)
-        if ((max(tail(l$price.close,time_span))*(1-price_drop_ratio) >= 
-         l$price.close[length(l$mavg)-5*3])) {
-            ticker_picked2 <- c(ticker_picked2,s)
-      }
-     }
-    return(ticker_picked2)
+    ticker_picked2 <- weekly %>%
+      filter(ticker %in% filter_one()$ticker) %>%
+      split(.$ticker) %>%
+      lapply(tail,round(time_span/5)) %>% #convert days to weeks
+      bind_rows() %>%
+      select(ticker,week,mavg) %>%
+      filter(!is.na(mavg)) %>%
+      group_by(ticker) %>%
+      summarise(max = max(mavg),
+                max_date = week[which.max(mavg)]) %>%
+      left_join(filter_one(),by = "ticker") %>%
+      mutate(drop_ratio = (max-avg)/max) %>%
+      filter(drop_ratio > price_drop_ratio)
+    
+    return(ticker_picked2$ticker)
   })
   
   filter_plot <- reactive({
