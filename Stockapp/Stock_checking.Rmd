@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 This script is made to check the US stock market for the past three weeks trades. 
 
 ```{r dependency, eval=TRUE,echo=FALSE}
+library(plyr)
 library(quantmod)
 library(BatchGetSymbols)
 library(tidyverse)
@@ -85,6 +86,16 @@ trades_processed_quarter <- trades_processed %>%
 ## Filter only the ones that fluctuate smaller than 5%
 ```{r filter_platform}
 price_fluctuation <- 0.05
+ticker_picked <- trades_processed_week %>%
+                      split(trades_processed_week$ticker) %>%
+                      lapply(tail,3) %>%
+                      bind_rows() %>%
+                      select(ticker,mavg) %>%
+                      group_by(ticker) %>%
+                      mutate(range = diff(range(mavg)),
+                                avg = mean(mavg)) %>%
+                      filter(flex < price_fluctuation)
+
 ticker_picked <- c()
 flat_weeks <- 3
 for (t in unique(trades_processed$ticker)) {
