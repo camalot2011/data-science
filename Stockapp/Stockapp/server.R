@@ -60,6 +60,7 @@ shinyServer(function(input, output) {
     price_fluctuation <- input$price_fluctuation
     
     ticker_picked <- weekly %>%
+      filter(week <= input$reference_date) %>%
       split(weekly$ticker) %>%
       lapply(tail,3) %>%
       bind_rows() %>%
@@ -78,6 +79,7 @@ shinyServer(function(input, output) {
     time_span <- input$time_span
     
     ticker_picked2 <- weekly %>%
+      filter(week <= input$reference_date) %>%
       filter(ticker %in% filter_one()$ticker) %>%
       split(.$ticker) %>%
       lapply(tail,round(time_span/5)) %>% #convert days to weeks

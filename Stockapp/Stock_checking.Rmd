@@ -86,7 +86,9 @@ trades_processed_quarter <- trades_processed %>%
 ## Filter only the ones that fluctuate smaller than 5%
 ```{r filter_platform}
 price_fluctuation <- 0.05
+reference_end <- Sys.Date()
 ticker_picked <- trades_processed %>%
+                      filter(ref.date <= reference_end) %>%
                       split(trades_processed$ticker) %>%
                       lapply(tail,15) %>%
                       bind_rows() %>%
@@ -97,6 +99,7 @@ ticker_picked <- trades_processed %>%
                       filter(flex < price_fluctuation)
 
 ticker_picked_week <- trades_processed_week %>%
+                      filter(week <= reference_end) %>%
                       split(trades_processed_week$ticker) %>%
                       lapply(tail,3) %>%
                       bind_rows() %>%
@@ -112,6 +115,7 @@ ticker_picked_week <- trades_processed_week %>%
 price_drop_ratio <- 0.3
 time_span <- 100 #in days
 ticker_picked2 <- trades_processed %>%
+                      filter(ref.date <= reference_end) %>%
                       filter(ticker %in% ticker_picked$ticker) %>%
                       split(.$ticker) %>%
                       lapply(tail,time_span) %>%
@@ -125,6 +129,7 @@ ticker_picked2 <- trades_processed %>%
                       filter(drop_ratio > price_drop_ratio)
 
 ticker_picked2_week <- trades_processed_week %>%
+                      filter(week <= reference_end) %>%
                       filter(ticker %in% ticker_picked_week$ticker) %>%
                       split(.$ticker) %>%
                       lapply(tail,round(time_span/5)) %>% #convert days to weeks
@@ -145,6 +150,11 @@ flat_span <- 60 #in days
 ticker_picked3 <- ticker_picked2 %>%
                       mutate(flat_days = Sys.Date() - max_date) %>%
                       filter(flat_days < flat_span)
+
+ticker_picked3_week <- ticker_picked2_week %>%
+                      mutate(max_date = as.Date(max_date),
+                             flat_week = floor((Sys.Date() - max_date)/7)) %>%
+                      filter(flat_week < floor(flat_span/7))
 ```
 
 ## File processing

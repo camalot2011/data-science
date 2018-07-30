@@ -12,6 +12,12 @@ shinyUI(fluidPage(
   sidebarLayout(
     sidebarPanel(
        
+       # Input the reference date (or end date) for the calculations
+       dateInput(inputId = "reference_date",
+                 label = "Please choose the end date",
+                 min = Sys.Date()-344,
+                 max = Sys.Date(),
+                 value = Sys.Date()),
        # Input the price-fluctuation range between 0 and 1 with default at 0.05
        numericInput(inputId = "price_fluctuation",
                     label = "Please set price fluctuation range (0.00-1.00):",
