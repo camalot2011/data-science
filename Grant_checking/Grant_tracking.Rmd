@@ -349,3 +349,104 @@ ggplot(proj_PT_df,aes(factor(FY),Grant/1000000,color = Word,fill = Word)) + geom
 
 Now this plot looked very interesting. The big jump from 2011 to 2012 might be due to the implementation of the new record system and/or recovery from the 2008 financial crisis. Besides that hump, it appears that "clinic" has a down trend after the NIH announcement for the translational studies. It bounds back quickly after 2011 and surpass the other three key words. Now, the "clinic" has the steepest rise in funding among the four keywords. Consistent with the plot above from the PHR section, "cancer" and "stem" cell both were attractive for funding allocation over the last decade. On the other hand, "heart" research was rather steady.
 
+Now comes to the most interesting part. Let's look at the grant application abstracts. Abstracts will have much more words to dig through. The database contains the grant abstracts ever since 1985. 
+
+```{r ABS_loading,include=FALSE}
+fns <- list.files("./Data/PRJABS")
+proj_ABS <- list()
+for (i in seq_along(fns)) {
+  temp <- fread(paste0(getwd(),"/Data/PRJABS/",fns[i]))
+  temp <- temp %>% 
+            select(APPLICATION_ID,ABSTRACT_TEXT)
+  proj_ABS[[i]] <- temp
+}
+names(proj_ABS) <-as.character(c(1985:2017))
+```
+```{r cleaning_ABS,include=FALSE}
+freq_ABS_total <- list()
+for (i in seq_along(proj_ABS)) {
+    proj_ABS[[i]] <- proj_ABS[[i]] %>% filter(nchar(ABSTRACT_TEXT) != 0)
+    text <- proj_ABS[[i]]$ABSTRACT_TEXT
+    corpus <- cleaning(text,words_remove)
+    tdm <- TermDocumentMatrix(corpus, control = list(weighting = weightTfIdf))
+    tdm <- removeSparseTerms(tdm,0.99)
+    freq <- sort(rowSums(as.matrix(tdm)),decreasing = TRUE)
+    freq_df <- data.frame(word = names(freq),freq = freq)
+    freq_ABS_total[[i]] <- freq_df
+}
+names(freq_ABS_total) <-as.character(c(1985:2017))
+```
+```{r include=FALSE}
+word_trend_ABS <- function(word) {
+  word_data <- data.frame()  
+  for (i in seq_along(freq_ABS_total)) {
+      t <- data.frame(word = word, 
+                      freq = freq_ABS_total[[i]]$freq[which(freq_ABS_total[[i]]$word == word)],
+                      year = names(proj_ABS)[i])
+      word_data <- rbind(word_data,t)
+  }
+  return(word_data)
+}
+
+cancer <- word_trend_ABS("cancer")
+clinic <- word_trend_ABS("clinic")
+heart <- word_trend_ABS("heart")
+ABS_plot <- rbind(cancer,clinic,heart)
+```
+```{r echo=FALSE}
+ggplot(ABS_plot,aes(year,freq,group = word,color = word)) + geom_line()+geom_point(aes(shape = word,size = 2))+theme(axis.text.x = element_text(size = 12))+scale_x_discrete(breaks = seq(1985,2017,4))+
+  labs(title = "Words appear over the years by applicatoin abstracts",x = "Year", y = "Frequency")
+```
+
+
+Plot from this analysis reveals other trends. Cancer is always higher than the rest of two. Gene is in a down trend in recent years while the other two are in the up trend in general. It will be interesting to see the trend of funding using this method to predict the next breakthrough in the health sector. Some of the parameters for text mining will need further refinement. Clustering/Classification can also be applied later on to get a better key word category. 
+```{r eval=FALSE, include=FALSE}
+proj_PT <- list()
+for (i in seq_along(fns)) {
+  temp <- fread(paste0(getwd(),"/Data/PRJ/",fns[i]))
+  temp <- temp %>% 
+            select(APPLICATION_ID,FY,PROJECT_TERMS,TOTAL_COST,TOTAL_COST_SUB_PROJECT)
+  temp[which(is.na(TOTAL_COST)),"TOTAL_COST"] <- 0
+  temp[which(is.na(TOTAL_COST_SUB_PROJECT)),"TOTAL_COST_SUB_PROJECT"] <- 0
+  temp <- temp %>% mutate(total = as.numeric(TOTAL_COST+TOTAL_COST_SUB_PROJECT)) %>%
+                select(APPLICATION_ID,FY,PROJECT_TERMS,total)
+  proj_PT[[i]] <- temp
+}
+names(proj_PT) <-as.character(c(2008:2017))
+```
+```{r eval=FALSE, include=FALSE}
+words_remove <- c("research","cell","cells","health","human","disease")
+freq_PT_total <- list()
+for (i in seq_along(proj_PT)) {
+    proj_PT[[i]] <- proj_PT[[i]] %>% filter(nchar(PROJECT_TERMS) != 0)
+    text <- proj_PT[[i]]$PROJECT_TERMS
+    corpus <- cleaning(text,words_remove)
+    dtm <- DocumentTermMatrix(corpus)
+    dtm <- removeSparseTerms(dtm,0.95)
+    freq <- sort(colapply_simple_triplet_matrix(dtm,FUN = sum),decreasing = TRUE)
+    freq<- data.frame(word = attr(freq,"names"),freq = freq)
+    freq_PT_total[[i]] <- freq
+}
+names(freq_PT_total) <-as.character(c(2008:2017))
+```
+```{r eval=FALSE, include=FALSE}
+word_trend_PT <- function(word) {
+  word_data <- data.frame()  
+  for (i in seq_along(freq_PT_total)) {
+      t <- data.frame(word = word, 
+                      freq = freq_PT_total[[i]]$freq[which(freq_PT_total[[i]]$word == word)],
+                      year = names(proj_PT)[i])
+      word_data <- rbind(word_data,t)
+  }
+  return(word_data)
+}
+
+cancer <- word_trend_PT("cancer")
+clinic <- word_trend_PT("clinic")
+heart <- word_trend_PT("heart")
+PT_plot <- rbind(cancer,clinic,heart)
+```
+```{r eval=FALSE, include=FALSE}
+ggplot(PT_plot,aes(year,freq,color = word)) + geom_bar(stat = "identity",position = "dodge",aes(fill = word))+
+  labs(title = "Fig.3 Words appear over the years by project terms",x = "Year", y = "Frequency")
+```
