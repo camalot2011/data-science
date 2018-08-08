@@ -140,6 +140,9 @@ plot(bigram_hcd_colored,
 ```
 
 
+
+
+
 ```{r bigram_cluster, echo=FALSE }
 cluster_id <- cutree(bigram_hc,k = 7)
 bigram_freq_df <- data.frame(word = rownames(bigram_m),
@@ -399,7 +402,7 @@ ggplot(ABS_plot,aes(year,freq,group = word,color = word)) + geom_line()+geom_poi
 ```
 
 
-Plot from this analysis reveals other trends. Cancer is always higher than the rest of two. Gene is in a down trend in recent years while the other two are in the up trend in general. It will be interesting to see the trend of funding using this method to predict the next breakthrough in the health sector. Some of the parameters for text mining will need further refinement. Clustering/Classification can also be applied later on to get a better key word category. 
+Plot from this analysis reveals other trends. Cancer is always higher than the rest of two. However, "cancer" is in a down trend in recent years. There were a big jump in grant funding in 2009. All the research funding had increasing period in the "Clinton" time. Again, "heart" research is rather steady in all these year, which accounts for the poor drug discorveries in the cardiovascular areas these years. 
 ```{r eval=FALSE, include=FALSE}
 proj_PT <- list()
 for (i in seq_along(fns)) {
